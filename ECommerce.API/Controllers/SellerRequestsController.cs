@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Features.Sellers.SellerRequests.ApproveSellerRequest;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Features.Sellers.SellerRequests.ApproveSellerRequest;
 using ECommerce.Application.Features.Sellers.SellerRequests.CreateSellerRequest;
 using ECommerce.Application.Features.Sellers.SellerRequests.GetSellerRequestById;
 using ECommerce.Application.Features.Sellers.SellerRequests.RejectSellerRequest;
@@ -12,6 +13,7 @@ namespace ECommerce.API.Controllers;
 [Route("api/seller-requests")]
 public class SellerRequestsController(ISender sender) : ControllerBase
 {
+    [Authorize]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SellerRequestDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -22,6 +24,7 @@ public class SellerRequestsController(ISender sender) : ControllerBase
         return Ok(sellerRequestId);
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult> Create(CreateSellerRequestCommand command, CancellationToken cancellationToken)
     {
@@ -30,7 +33,7 @@ public class SellerRequestsController(ISender sender) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = sellerRequestId }, new { id = sellerRequestId });
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = ApplicationRoles.Admin)]
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> Approve(Guid id, CancellationToken cancellationToken)
     {
@@ -38,7 +41,7 @@ public class SellerRequestsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = ApplicationRoles.Admin)]
     [HttpPost("{id:guid}/reject")]
     public async Task<IActionResult> Reject(Guid id, CancellationToken cancellationToken)
     {

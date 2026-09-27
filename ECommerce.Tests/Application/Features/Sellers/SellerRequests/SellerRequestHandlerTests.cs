@@ -13,13 +13,13 @@ namespace ECommerce.Tests.Application.Features.Sellers.SellerRequests;
 public sealed class SellerRequestHandlerTests
 {
     [Test]
-    public async Task CreateSellerRequest_should_create_request_and_return_id()
+    public async Task CreateSellerRequest_should_create_request_for_current_user_and_return_id()
     {
         var userId = Guid.NewGuid();
 
-        var userRepository = new FakeUserRepository
+        var currentUser = new FakeCurrentUser
         {
-            ExistsResult = true
+            UserId = userId
         };
 
         var sellerRequestRepository = new FakeSellerRequestRepository();
@@ -27,11 +27,10 @@ public sealed class SellerRequestHandlerTests
 
         var handler = new CreateSellerRequestCommandHandler(
             sellerRequestRepository,
-            userRepository,
+            currentUser,
             unitOfWork);
 
         var command = new CreateSellerRequestCommand(
-            userId,
             "I want to become a seller.");
 
         var result = await handler.Handle(
@@ -69,11 +68,11 @@ public sealed class SellerRequestHandlerTests
     }
 
     [Test]
-    public async Task CreateSellerRequest_should_throw_not_found_when_user_does_not_exist()
+    public async Task CreateSellerRequest_should_throw_unauthorized_when_current_user_is_not_authenticated()
     {
-        var userRepository = new FakeUserRepository
+        var currentUser = new FakeCurrentUser
         {
-            ExistsResult = false
+            UserId = null
         };
 
         var sellerRequestRepository = new FakeSellerRequestRepository();
@@ -81,28 +80,31 @@ public sealed class SellerRequestHandlerTests
 
         var handler = new CreateSellerRequestCommandHandler(
             sellerRequestRepository,
-            userRepository,
+            currentUser,
             unitOfWork);
 
         var command = new CreateSellerRequestCommand(
-            Guid.NewGuid(),
             "I want to become a seller.");
 
-        var exception = Assert.ThrowsAsync<NotFoundException>(async () => await handler.Handle(
-            command,
-            CancellationToken.None));
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
 
         Assert.That(
             exception!.Message,
-            Does.Contain("User"));
+            Does.Contain("Authenticated user"));
 
-        Assert.That(
-            sellerRequestRepository.AddedRequest,
-            Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sellerRequestRepository.AddedRequest,
+                Is.Null);
 
-        Assert.That(
-            unitOfWork.SaveChangesCalled,
-            Is.False);
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.False);
+        });
     }
 
     private sealed class FakeUserRepository : IUserRepository
@@ -175,17 +177,25 @@ public sealed class SellerRequestHandlerTests
     private sealed class FakeCurrentUser : ICurrentUser
     {
         public Guid? UserId { get; set; }
-        public bool IsAuthenticated => UserId.HasValue;
-        public bool IsInRole(string role) => true;
+
+        public List<string> Roles { get; } = [];
+
+        public bool IsAuthenticated =>
+            UserId.HasValue;
+
+        public bool IsInRole(string role) =>
+            Roles.Contains(role);
     }
     
     [Test]
     public async Task GetSellerRequestById_should_return_null_when_request_does_not_exist()
     {
         var sellerRequestRepository = new FakeSellerRequestRepository();
+        var currentUser = new FakeCurrentUser();
 
         var handler = new GetSellerRequestByIdQueryHandler(
-            sellerRequestRepository);
+            sellerRequestRepository,
+            currentUser);
 
         var query = new GetSellerRequestByIdQuery(Guid.NewGuid());
 
@@ -212,9 +222,15 @@ public sealed class SellerRequestHandlerTests
         {
             Request = sellerRequest
         };
+        
+        var  currentUser = new FakeCurrentUser
+        {
+            UserId = userId
+        };
 
         var handler = new GetSellerRequestByIdQueryHandler(
-            sellerRequestRepository);
+            sellerRequestRepository,
+            currentUser);
 
         var query = new GetSellerRequestByIdQuery(
             sellerRequest.Id);
@@ -250,6 +266,143 @@ public sealed class SellerRequestHandlerTests
             Assert.That(
                 result.ReviewedAt,
                 Is.EqualTo(sellerRequest.ReviewedAt));
+        });
+    }
+    
+    [Test]
+    public async Task GetSellerRequestById_should_throw_unauthorized_when_user_is_not_authenticated()
+    {
+        var sellerRequest = SellerRequest.Create(
+            Guid.NewGuid(),
+            "I want to become a seller.");
+
+        var sellerRequestRepository = new FakeSellerRequestRepository
+        {
+            Request = sellerRequest
+        };
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = null
+        };
+
+        var handler = new GetSellerRequestByIdQueryHandler(
+            sellerRequestRepository,
+            currentUser);
+
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                new GetSellerRequestByIdQuery(sellerRequest.Id),
+                CancellationToken.None));
+
+        Assert.That(
+            exception,
+            Is.Not.Null);
+    }
+    
+    [Test]
+    public async Task GetSellerRequestById_should_throw_forbidden_when_user_is_not_owner()
+    {
+        var ownerId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        var sellerRequest = SellerRequest.Create(
+            ownerId,
+            "I want to become a seller.");
+
+        var sellerRequestRepository = new FakeSellerRequestRepository
+        {
+            Request = sellerRequest
+        };
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = anotherUserId
+        };
+
+        var handler = new GetSellerRequestByIdQueryHandler(
+            sellerRequestRepository,
+            currentUser);
+
+        var exception = Assert.ThrowsAsync<ForbiddenException>(
+            async () => await handler.Handle(
+                new GetSellerRequestByIdQuery(sellerRequest.Id),
+                CancellationToken.None));
+
+        Assert.That(
+            exception!.Message,
+            Does.Contain("not allowed"));
+    }
+    
+    [Test]
+    public async Task GetSellerRequestById_should_allow_admin_to_view_any_request()
+    {
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+
+        var sellerRequest = SellerRequest.Create(
+            userId,
+            "I want to become a seller.");
+
+        var sellerRequestRepository = new FakeSellerRequestRepository
+        {
+            Request = sellerRequest
+        };
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = adminUserId
+        };
+
+        // FakeCurrentUser فعلی را طوری تنظیم کن که بتواند Role را هم تعیین کند.
+        currentUser.Roles.Add(ApplicationRoles.Admin);
+
+        var handler = new GetSellerRequestByIdQueryHandler(
+            sellerRequestRepository,
+            currentUser);
+
+        var result = await handler.Handle(
+            new GetSellerRequestByIdQuery(sellerRequest.Id),
+            CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+    }
+    
+    [Test]
+    public async Task GetSellerRequestById_should_return_request_for_owner()
+    {
+        var userId = Guid.NewGuid();
+
+        var sellerRequest = SellerRequest.Create(
+            userId,
+            "I want to become a seller.");
+
+        var sellerRequestRepository = new FakeSellerRequestRepository
+        {
+            Request = sellerRequest
+        };
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = userId
+        };
+
+        var handler = new GetSellerRequestByIdQueryHandler(
+            sellerRequestRepository,
+            currentUser);
+
+        var result = await handler.Handle(
+            new GetSellerRequestByIdQuery(sellerRequest.Id),
+            CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result!.Id, Is.EqualTo(sellerRequest.Id));
+            Assert.That(result.UserId, Is.EqualTo(userId));
+            Assert.That(result.Status, Is.EqualTo(SellerRequestStatus.Pending));
+            Assert.That(result.Reason, Is.EqualTo("I want to become a seller."));
         });
     }
 

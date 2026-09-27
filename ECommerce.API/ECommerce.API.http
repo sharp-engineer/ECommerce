@@ -1,4 +1,5 @@
 @ECommerce_API_HostAddress = https://localhost:7102
+@Token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMWEwZTIxYy1hNzI0LTc4NTItYWNkZS0zNmZkYjE1Njk4OTMiLCJlbWFpbCI6ImFkbWluQHRlc3QuY29tIiwianRpIjoiYjNmNmMwYmEtNzA4NS00MGNjLWI4MzgtNDBkZDE1NjRkZjBhIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJuYmYiOjE3OTA1MTc4NTQsImV4cCI6MTc5MDUyMTQ1NCwiaXNzIjoiRUNvbW1lcmNlLkFQSSIsImF1ZCI6IkVDb21tZXJjZS5BUEkifQ.NoD1dtqYWq8Bys--uDfCPaouNqlm_gcmCvItf5Yg_HU
 
 GET {{ECommerce_API_HostAddress}}/api/products/cafb0c28-52bf-4d4c-817f-9dd42ad9ee3c
 Accept: application/json
@@ -78,9 +79,9 @@ Accept: application/json
 ###
 POST {{ECommerce_API_HostAddress}}/api/seller-offers
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
 {
-  "sellerId": "01a0cd45-d428-765d-8999-93e38daf4bd1",
   "productVariantId": "72e245c7-7e84-42d5-8844-ef766bd3f052",
   "price": 50000000,
   "stock": 10
@@ -92,41 +93,38 @@ Accept: application/json
 ###
 POST {{ECommerce_API_HostAddress}}/api/seller-requests
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
 {
-  "userId": "01a0cd45-d428-765d-8999-93e38daf4bd1",
-  "reason": "I want to sell TVs."
+  "reason": "I want to sell TVs and Mobile phones."
 }
 ###
-GET {{ECommerce_API_HostAddress}}/api/seller-requests/9e4e3421-7c32-48cb-a6b4-80303adc3c4b
+GET {{ECommerce_API_HostAddress}}/api/seller-requests/e4552ccc-b6e9-427b-ba5d-2f8845771579
 Accept: application/json
 
 ###
-POST {{ECommerce_API_HostAddress}}/api/seller-requests/9e4e3421-7c32-48cb-a6b4-80303adc3c4b/approve
+POST {{ECommerce_API_HostAddress}}/api/seller-requests/47501b40-65fb-4cbf-b121-5f1ffe1b4043/approve
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
-{
-  "adminUserId": "01a0cd45-d428-765d-8999-93e38daf4bd1"
-}
 ###
-POST {{ECommerce_API_HostAddress}}/api/seller-requests/3202a30f-4fbf-462b-a043-9a89ac1bde6a/reject
+POST {{ECommerce_API_HostAddress}}/api/seller-requests/e4552ccc-b6e9-427b-ba5d-2f8845771579/reject
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
-{
-  "adminUserId": "01a0cd45-d428-765d-8999-93e38daf4bd1"
-}
 ###
 PUT {{ECommerce_API_HostAddress}}/api/seller-offers/price
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
 {
-  "sellerOfferId": "9c0db6d2-fd7c-4039-9032-692fac6de236",
   "price": 160000,
   "rowVersion": 932
 }
 ###
 PUT {{ECommerce_API_HostAddress}}/api/seller-offers/stock
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
 {
   "sellerOfferId": "9c0db6d2-fd7c-4039-9032-692fac6de236",
@@ -136,6 +134,7 @@ Content-Type: application/json
 ###
 PUT {{ECommerce_API_HostAddress}}/api/seller-offers/activate
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
 {
   "sellerOfferId": "9c0db6d2-fd7c-4039-9032-692fac6de236",
@@ -144,6 +143,7 @@ Content-Type: application/json
 ###
 PUT {{ECommerce_API_HostAddress}}/api/seller-offers/deactivate
 Content-Type: application/json
+Authorization: Bearer {{Token}}
 
 {
   "sellerOfferId": "9c0db6d2-fd7c-4039-9032-692fac6de236",
@@ -154,7 +154,7 @@ POST {{ECommerce_API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@test.com",
+  "email": "seller@test.com",
   "password": "Password123!"
 }
 ###

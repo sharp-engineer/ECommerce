@@ -26,7 +26,7 @@ public class SellerOffersController(ISender sender) : ControllerBase
 
         return Ok(offer);
     }
-    
+
     [HttpPost]
     public async Task<ActionResult> Create(CreateSellerOfferCommand command, CancellationToken cancellationToken)
     {
@@ -42,7 +42,7 @@ public class SellerOffersController(ISender sender) : ControllerBase
         await sender.Send(command, cancellationToken);
         return NoContent();
     }
-    
+
     [HttpPut("stock")]
     public async Task<IActionResult> UpdateStock(UpdateSellerOfferStockCommand command,
         CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ public class SellerOffersController(ISender sender) : ControllerBase
         await sender.Send(command, cancellationToken);
         return NoContent();
     }
-    
+
     [HttpPut("activate")]
     public async Task<IActionResult> Activate(ActivateSellerOfferCommand command,
         CancellationToken cancellationToken)
@@ -58,7 +58,7 @@ public class SellerOffersController(ISender sender) : ControllerBase
         await sender.Send(command, cancellationToken);
         return NoContent();
     }
-    
+
     [HttpPut("deactivate")]
     public async Task<IActionResult> Deactivate(DeactivateSellerOfferCommand command,
         CancellationToken cancellationToken)

@@ -12,7 +12,6 @@ public sealed class SellerRequestValidatorTests
         var validator = new CreateSellerRequestCommandValidator();
 
         var command = new CreateSellerRequestCommand(
-            Guid.NewGuid(),
             null);
 
         var result = validator.Validate(command);
@@ -26,7 +25,6 @@ public sealed class SellerRequestValidatorTests
         var validator = new CreateSellerRequestCommandValidator();
 
         var command = new CreateSellerRequestCommand(
-            Guid.NewGuid(),
             new string('a', 1000));
 
         var result = validator.Validate(command);
@@ -40,23 +38,10 @@ public sealed class SellerRequestValidatorTests
         var validator = new CreateSellerRequestCommandValidator();
 
         var command = new CreateSellerRequestCommand(
-            Guid.NewGuid(),
             new string('a', 1001));
 
         var result = validator.Validate(command);
 
-        Assert.That(result.IsValid, Is.False);
-    }
-
-    [Test]
-    public void CreateSellerRequest_should_reject_empty_user_id()
-    {
-        var validator = new CreateSellerRequestCommandValidator();
-
-        var command = new CreateSellerRequestCommand(Guid.Empty, "I want to become a seller.");
-        
-        var result = validator.Validate(command);
-        
         Assert.That(result.IsValid, Is.False);
     }
     
