@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Abstractions.Persistence;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Abstractions.Persistence;
 using ECommerce.Application.Exceptions;
 using MediatR;
 
@@ -6,7 +7,8 @@ namespace ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.De
 
 public sealed class DeactivateSellerOfferCommandHandler(
     ISellerOfferRepository sellerOfferRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeactivateSellerOfferCommand>
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser) : IRequestHandler<DeactivateSellerOfferCommand>
 {
     public async Task Handle(DeactivateSellerOfferCommand command, CancellationToken cancellationToken)
     {
@@ -15,6 +17,10 @@ public sealed class DeactivateSellerOfferCommandHandler(
                 cancellationToken);
         if (sellerOffer is null)
             throw new NotFoundException($"Seller offer with id '{command.SellerOfferId}' was not found.");
+        
+        var currentUserId = currentUser.UserId ?? throw new UnauthorizedException("Authenticated user is required.");
+        if (sellerOffer.SellerId != currentUserId)
+            throw new ForbiddenException("You are not allowed to modify this seller offer.");
 
         sellerOffer.Deactivate();
         await unitOfWork.SaveChangesAsync(cancellationToken);

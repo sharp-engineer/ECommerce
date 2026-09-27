@@ -76,6 +76,15 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
                 exception.Message,
                 context.RequestAborted);
         }
+        catch (ForbiddenException exception)
+        {
+            await WriteProblemDetailsAsync(
+                context,
+                StatusCodes.Status403Forbidden,
+                "Forbidden.",
+                exception.Message,
+                context.RequestAborted);
+        }
         catch (Exception exception)
         {
             logger.LogError(exception, "An unhandled exception occurred while processing the request.");

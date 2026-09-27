@@ -5,6 +5,7 @@ using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.GetSel
 using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.UpdateSellerOfferPrice;
 using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.UpdateSellerOfferStock;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;
@@ -23,6 +24,7 @@ public class SellerOffersController(ISender sender) : ControllerBase
         return Ok(offer);
     }
 
+    [Authorize(Roles = "Seller")]
     [HttpPost]
     public async Task<ActionResult> Create(CreateSellerOfferCommand command, CancellationToken cancellationToken)
     {

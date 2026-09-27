@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Abstractions.Persistence;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Abstractions.Persistence;
 using ECommerce.Application.Exceptions;
 using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.ActiveSellerOffer;
 using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.CreateSellerOffer;
@@ -14,14 +15,14 @@ namespace ECommerce.Tests.Application.Features.Catalog.ProductVariants.SellerOff
 public sealed class SellerOfferHandlerTests
 {
     [Test]
-    public async Task CreateSellerOffer_should_create_offer_and_return_id()
+    public async Task CreateSellerOffer_should_create_offer_for_current_user_and_return_id()
     {
         var sellerId = Guid.NewGuid();
         var productVariantId = Guid.NewGuid();
 
-        var userRepository = new FakeUserRepository
+        var currentUser = new FakeCurrentUser()
         {
-            ExistsResult = true
+            UserId = sellerId
         };
 
         var productVariantRepository = new FakeProductVariantRepository
@@ -33,13 +34,12 @@ public sealed class SellerOfferHandlerTests
         var unitOfWork = new FakeUnitOfWork();
 
         var handler = new CreateSellerOfferCommandHandler(
-            userRepository,
+            currentUser,
             productVariantRepository,
             sellerOfferRepository,
             unitOfWork);
 
         var command = new CreateSellerOfferCommand(
-            sellerId,
             productVariantId,
             100_000,
             10);
@@ -82,57 +82,11 @@ public sealed class SellerOfferHandlerTests
     }
 
     [Test]
-    public async Task CreateSellerOffer_should_throw_not_found_when_seller_does_not_exist()
-    {
-        var userRepository = new FakeUserRepository
-        {
-            ExistsResult = false
-        };
-
-        var productVariantRepository = new FakeProductVariantRepository
-        {
-            ExistsResult = true
-        };
-
-        var sellerOfferRepository = new FakeSellerOfferRepository();
-        var unitOfWork = new FakeUnitOfWork();
-
-        var handler = new CreateSellerOfferCommandHandler(
-            userRepository,
-            productVariantRepository,
-            sellerOfferRepository,
-            unitOfWork);
-
-        var command = new CreateSellerOfferCommand(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            100_000,
-            10);
-
-        var exception = Assert.ThrowsAsync<NotFoundException>(
-            async () => await handler.Handle(
-                command,
-                CancellationToken.None));
-
-        Assert.That(
-            exception!.Message,
-            Does.Contain("Seller"));
-
-        Assert.That(
-            sellerOfferRepository.AddedOffer,
-            Is.Null);
-
-        Assert.That(
-            unitOfWork.SaveChangesCalled,
-            Is.False);
-    }
-
-    [Test]
     public async Task CreateSellerOffer_should_throw_not_found_when_product_variant_does_not_exist()
     {
-        var userRepository = new FakeUserRepository
+        var currentUser = new FakeCurrentUser()
         {
-            ExistsResult = true
+            UserId = Guid.NewGuid()
         };
 
         var productVariantRepository = new FakeProductVariantRepository
@@ -144,13 +98,12 @@ public sealed class SellerOfferHandlerTests
         var unitOfWork = new FakeUnitOfWork();
 
         var handler = new CreateSellerOfferCommandHandler(
-            userRepository,
+            currentUser,
             productVariantRepository,
             sellerOfferRepository,
             unitOfWork);
 
         var command = new CreateSellerOfferCommand(
-            Guid.NewGuid(),
             Guid.NewGuid(),
             100_000,
             10);
@@ -173,24 +126,52 @@ public sealed class SellerOfferHandlerTests
             Is.False);
     }
 
-    private sealed class FakeUserRepository : IUserRepository
+    [Test]
+    public async Task CreateSellerOffer_should_throw_unauthorized_when_current_user_is_not_authenticated()
     {
-        public bool ExistsResult { get; set; }
-
-        public Task<bool> ExistsAsync(
-            Guid userId,
-            CancellationToken cancellationToken = default)
+        var currentUser = new FakeCurrentUser
         {
-            return Task.FromResult(ExistsResult);
-        }
+            UserId = null
+        };
 
-        public Task SetSellerStatusAsync(
-            Guid userId,
-            SellerStatus status,
-            CancellationToken cancellationToken)
+        var productVariantRepository = new FakeProductVariantRepository
         {
-            return Task.CompletedTask;
-        }
+            ExistsResult = true
+        };
+
+        var sellerOfferRepository = new FakeSellerOfferRepository();
+        var unitOfWork = new FakeUnitOfWork();
+
+        var handler = new CreateSellerOfferCommandHandler(
+            currentUser,
+            productVariantRepository,
+            sellerOfferRepository,
+            unitOfWork);
+
+        var command = new CreateSellerOfferCommand(
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.That(
+            exception!.Message,
+            Does.Contain("Authenticated user"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sellerOfferRepository.AddedOffer,
+                Is.Null);
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.False);
+        });
     }
 
     private sealed class FakeProductVariantRepository : IProductVariantRepository
@@ -272,6 +253,13 @@ public sealed class SellerOfferHandlerTests
         }
     }
     
+    private sealed class FakeCurrentUser : ICurrentUser
+    {
+        public Guid? UserId { get; set; }
+        public bool IsAuthenticated => UserId.HasValue;
+        public bool IsInRole(string role) => true;
+    }
+    
     [Test]
     public async Task GetSellerOfferById_should_return_null_when_offer_does_not_exist()
     {
@@ -333,8 +321,9 @@ public sealed class SellerOfferHandlerTests
     {
         var sellerOfferRepository = new FakeSellerOfferRepository();
         var unitOfWork =  new FakeUnitOfWork();
+        var currentUser = new FakeCurrentUser();
 
-        var handler = new UpdateSellerOfferPriceCommandHandler(sellerOfferRepository, unitOfWork);
+        var handler = new UpdateSellerOfferPriceCommandHandler(sellerOfferRepository, unitOfWork, currentUser);
 
         var command = new UpdateSellerOfferPriceCommand(
             Guid.NewGuid(),
@@ -353,8 +342,10 @@ public sealed class SellerOfferHandlerTests
     [Test]
     public async Task UpdateSellerOfferPrice_should_update_price_and_save_changes()
     {
+        var sellerId = Guid.NewGuid();
+        
         var sellerOffer = SellerOffer.Create(
-            Guid.NewGuid(),
+            sellerId,
             Guid.NewGuid(),
             100_000,
             10);
@@ -366,7 +357,12 @@ public sealed class SellerOfferHandlerTests
 
         var unitOfWork = new FakeUnitOfWork();
 
-        var handler = new UpdateSellerOfferPriceCommandHandler(sellerOfferRepository, unitOfWork);
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
+        var handler = new UpdateSellerOfferPriceCommandHandler(sellerOfferRepository, unitOfWork, currentUser);
 
         var command = new UpdateSellerOfferPriceCommand(
             sellerOffer.Id,
@@ -382,14 +378,155 @@ public sealed class SellerOfferHandlerTests
             Assert.That(unitOfWork.SaveChangesCalled, Is.True);
         });
     }
+    
+    [Test]
+    public async Task UpdateSellerOfferPrice_should_update_price_for_owner()
+    {
+        var sellerId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
+        var handler = new UpdateSellerOfferPriceCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new UpdateSellerOfferPriceCommand(
+            sellerOffer.Id,
+            150_000,
+            1);
+
+        await handler.Handle(
+            command,
+            CancellationToken.None);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sellerOffer.Price,
+                Is.EqualTo(150_000));
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.True);
+        });
+    }
+    
+    [Test]
+    public async Task UpdateSellerOfferPrice_should_throw_unauthorized_when_user_is_not_authenticated()
+    {
+        var sellerOffer = SellerOffer.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = null
+        };
+
+        var handler = new UpdateSellerOfferPriceCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new UpdateSellerOfferPriceCommand(
+            sellerOffer.Id,
+            150_000,
+            1);
+
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+            Assert.That(unitOfWork.SaveChangesCalled, Is.False);
+            Assert.That(sellerOffer.Price, Is.EqualTo(100_000));
+        });
+    }
+    
+    [Test]
+    public async Task UpdateSellerOfferPrice_should_throw_forbidden_when_user_is_not_owner()
+    {
+        var sellerId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = anotherUserId
+        };
+
+        var handler = new UpdateSellerOfferPriceCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new UpdateSellerOfferPriceCommand(
+            sellerOffer.Id,
+            150_000,
+            1);
+
+        var exception = Assert.ThrowsAsync<ForbiddenException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+            Assert.That(unitOfWork.SaveChangesCalled, Is.False);
+            Assert.That(sellerOffer.Price, Is.EqualTo(100_000));
+        });
+    }
 
     [Test]
     public async Task UpdateSellerOfferStock_should_throw_not_found_when_offer_does_not_exist()
     {
         var sellerOfferRepository = new FakeSellerOfferRepository();
         var unitOfWork =  new FakeUnitOfWork();
+        var currentUser = new FakeCurrentUser();
 
-        var handler = new UpdateSellerOfferStockCommandHandler(sellerOfferRepository, unitOfWork);
+        var handler = new UpdateSellerOfferStockCommandHandler(sellerOfferRepository, unitOfWork, currentUser);
 
         var command = new UpdateSellerOfferStockCommand(
             Guid.NewGuid(),
@@ -407,8 +544,10 @@ public sealed class SellerOfferHandlerTests
     [Test]
     public async Task UpdateSellerOfferStock_should_update_stock_and_save_changes()
     {
+        var sellerId = Guid.NewGuid();
+        
         var sellerOffer = SellerOffer.Create(
-            Guid.NewGuid(),
+            sellerId,
             Guid.NewGuid(),
             100_000,
             10);
@@ -420,7 +559,12 @@ public sealed class SellerOfferHandlerTests
 
         var unitOfWork = new FakeUnitOfWork();
 
-        var handler = new UpdateSellerOfferStockCommandHandler(sellerOfferRepository, unitOfWork);
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
+        var handler = new UpdateSellerOfferStockCommandHandler(sellerOfferRepository, unitOfWork, currentUser);
 
         var command = new UpdateSellerOfferStockCommand(
             sellerOffer.Id,
@@ -438,14 +582,156 @@ public sealed class SellerOfferHandlerTests
     }
     
     [Test]
+    public async Task UpdateSellerOfferStock_should_update_stock_for_owner()
+    {
+        var sellerId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
+        var handler = new UpdateSellerOfferStockCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new UpdateSellerOfferStockCommand(
+            sellerOffer.Id,
+            0,
+            1);
+
+        await handler.Handle(
+            command,
+            CancellationToken.None);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sellerOffer.Stock,
+                Is.EqualTo(0));
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.True);
+        });
+    }
+    
+    [Test]
+    public async Task UpdateSellerOfferStock_should_throw_unauthorized_when_user_is_not_authenticated()
+    {
+        var sellerOffer = SellerOffer.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = null
+        };
+
+        var handler = new UpdateSellerOfferStockCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new UpdateSellerOfferStockCommand(
+            sellerOffer.Id,
+            5,
+            1);
+
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+            Assert.That(unitOfWork.SaveChangesCalled, Is.False);
+            Assert.That(sellerOffer.Stock, Is.EqualTo(10));
+        });
+    }
+    
+    [Test]
+    public async Task UpdateSellerOfferStock_should_throw_forbidden_when_user_is_not_owner()
+    {
+        var sellerId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = anotherUserId
+        };
+
+        var handler = new UpdateSellerOfferStockCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new UpdateSellerOfferStockCommand(
+            sellerOffer.Id,
+            5,
+            1);
+
+        var exception = Assert.ThrowsAsync<ForbiddenException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+            Assert.That(unitOfWork.SaveChangesCalled, Is.False);
+            Assert.That(sellerOffer.Stock, Is.EqualTo(10));
+        });
+    }
+    
+    [Test]
     public async Task ActivateSellerOffer_should_throw_not_found_when_offer_does_not_exist()
     {
         var sellerOfferRepository = new FakeSellerOfferRepository();
         var unitOfWork = new FakeUnitOfWork();
+        var currentUser = new FakeCurrentUser();
 
         var handler = new ActivateSellerOfferCommandHandler(
             sellerOfferRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new ActivateSellerOfferCommand(
             Guid.NewGuid(),
@@ -468,8 +754,10 @@ public sealed class SellerOfferHandlerTests
     [Test]
     public async Task ActivateSellerOffer_should_activate_offer_and_save_changes()
     {
+        var sellerId = Guid.NewGuid();
+        
         var sellerOffer = SellerOffer.Create(
-            Guid.NewGuid(),
+            sellerId,
             Guid.NewGuid(),
             100_000,
             10);
@@ -481,9 +769,15 @@ public sealed class SellerOfferHandlerTests
 
         var unitOfWork = new FakeUnitOfWork();
 
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
         var handler = new ActivateSellerOfferCommandHandler(
             sellerOfferRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new ActivateSellerOfferCommand(
             sellerOffer.Id,
@@ -506,14 +800,157 @@ public sealed class SellerOfferHandlerTests
     }
     
     [Test]
+    public async Task ActivateSellerOffer_should_activate_offer_for_owner()
+    {
+        var sellerId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
+        var handler = new ActivateSellerOfferCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new ActivateSellerOfferCommand(
+            sellerOffer.Id,
+            1);
+
+        await handler.Handle(
+            command,
+            CancellationToken.None);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sellerOffer.Status,
+                Is.EqualTo(SellerOfferStatus.Active));
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.True);
+        });
+    }
+    
+    [Test]
+    public async Task ActivateSellerOffer_should_throw_unauthorized_when_user_is_not_authenticated()
+    {
+        var sellerOffer = SellerOffer.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = null
+        };
+
+        var handler = new ActivateSellerOfferCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new ActivateSellerOfferCommand(
+            sellerOffer.Id,
+            1);
+
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+            Assert.That(unitOfWork.SaveChangesCalled, Is.False);
+            Assert.That(
+                sellerOffer.Status,
+                Is.EqualTo(SellerOfferStatus.Inactive));
+        });
+    }
+    
+    [Test]
+    public async Task ActivateSellerOffer_should_throw_forbidden_when_user_is_not_owner()
+    {
+        var sellerId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = anotherUserId
+        };
+
+        var handler = new ActivateSellerOfferCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new ActivateSellerOfferCommand(
+            sellerOffer.Id,
+            1);
+
+        var exception = Assert.ThrowsAsync<ForbiddenException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+            Assert.That(unitOfWork.SaveChangesCalled, Is.False);
+            Assert.That(
+                sellerOffer.Status,
+                Is.EqualTo(SellerOfferStatus.Inactive));
+        });
+    }
+    
+    [Test]
     public async Task DeactivateSellerOffer_should_throw_not_found_when_offer_does_not_exist()
     {
         var sellerOfferRepository = new FakeSellerOfferRepository();
         var unitOfWork = new FakeUnitOfWork();
+        var currentUser = new FakeCurrentUser();
 
         var handler = new DeactivateSellerOfferCommandHandler(
             sellerOfferRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new DeactivateSellerOfferCommand(
             Guid.NewGuid(),
@@ -536,8 +973,10 @@ public sealed class SellerOfferHandlerTests
     [Test]
     public async Task DeactivateSellerOffer_should_deactivate_offer_and_save_changes()
     {
+        var sellerId = Guid.NewGuid();
+        
         var sellerOffer = SellerOffer.Create(
-            Guid.NewGuid(),
+            sellerId,
             Guid.NewGuid(),
             100_000,
             10);
@@ -551,9 +990,15 @@ public sealed class SellerOfferHandlerTests
 
         var unitOfWork = new FakeUnitOfWork();
 
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
         var handler = new DeactivateSellerOfferCommandHandler(
             sellerOfferRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new DeactivateSellerOfferCommand(
             sellerOffer.Id,
@@ -572,6 +1017,161 @@ public sealed class SellerOfferHandlerTests
             Assert.That(
                 unitOfWork.SaveChangesCalled,
                 Is.True);
+        });
+    }
+    
+    [Test]
+    public async Task DeactivateSellerOffer_should_deactivate_offer_for_owner()
+    {
+        var sellerId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        sellerOffer.Activate();
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = sellerId
+        };
+
+        var handler = new DeactivateSellerOfferCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new DeactivateSellerOfferCommand(
+            sellerOffer.Id,
+            1);
+
+        await handler.Handle(
+            command,
+            CancellationToken.None);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sellerOffer.Status,
+                Is.EqualTo(SellerOfferStatus.Inactive));
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.True);
+        });
+    }
+    
+    [Test]
+    public async Task DeactivateSellerOffer_should_throw_unauthorized_when_user_is_not_authenticated()
+    {
+        var sellerOffer = SellerOffer.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        sellerOffer.Activate();
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = null
+        };
+
+        var handler = new DeactivateSellerOfferCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new DeactivateSellerOfferCommand(
+            sellerOffer.Id,
+            1);
+
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.False);
+
+            Assert.That(
+                sellerOffer.Status,
+                Is.EqualTo(SellerOfferStatus.Active));
+        });
+    }
+    
+    [Test]
+    public async Task DeactivateSellerOffer_should_throw_forbidden_when_user_is_not_owner()
+    {
+        var sellerId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        var sellerOffer = SellerOffer.Create(
+            sellerId,
+            Guid.NewGuid(),
+            100_000,
+            10);
+
+        sellerOffer.Activate();
+
+        var sellerOfferRepository = new FakeSellerOfferRepository
+        {
+            OfferForUpdate = sellerOffer
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = anotherUserId
+        };
+
+        var handler = new DeactivateSellerOfferCommandHandler(
+            sellerOfferRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new DeactivateSellerOfferCommand(
+            sellerOffer.Id,
+            1);
+
+        var exception = Assert.ThrowsAsync<ForbiddenException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception, Is.Not.Null);
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.False);
+
+            Assert.That(
+                sellerOffer.Status,
+                Is.EqualTo(SellerOfferStatus.Active));
         });
     }
 }

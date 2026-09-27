@@ -15,7 +15,6 @@ public sealed class SellerOfferValidatorTests
 
         var command = new CreateSellerOfferCommand(
             Guid.NewGuid(),
-            Guid.NewGuid(),
             100_000,
             0);
 
@@ -31,7 +30,6 @@ public sealed class SellerOfferValidatorTests
 
         var command = new CreateSellerOfferCommand(
             Guid.Empty,
-            Guid.NewGuid(),
             100_000,
             10);
 
@@ -46,7 +44,6 @@ public sealed class SellerOfferValidatorTests
         var validator = new CreateSellerOfferCommandValidator();
 
         var command = new CreateSellerOfferCommand(
-            Guid.NewGuid(),
             Guid.Empty,
             100_000,
             10);
@@ -63,7 +60,6 @@ public sealed class SellerOfferValidatorTests
 
         var command = new CreateSellerOfferCommand(
             Guid.NewGuid(),
-            Guid.NewGuid(),
             0,
             10);
 
@@ -78,7 +74,6 @@ public sealed class SellerOfferValidatorTests
         var validator = new CreateSellerOfferCommandValidator();
 
         var command = new CreateSellerOfferCommand(
-            Guid.NewGuid(),
             Guid.NewGuid(),
             100_000,
             -1);
