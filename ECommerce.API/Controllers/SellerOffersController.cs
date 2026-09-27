@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.ActiveSellerOffer;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.ActiveSellerOffer;
 using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.CreateSellerOffer;
 using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.DeactivateSellerOffer;
 using ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.GetSellerOfferById;
@@ -12,8 +13,10 @@ namespace ECommerce.API.Controllers;
 
 [ApiController]
 [Route("api/seller-offers")]
+[Authorize(Roles = ApplicationRoles.Seller)]
 public class SellerOffersController(ISender sender) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SellerOfferDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -23,8 +26,7 @@ public class SellerOffersController(ISender sender) : ControllerBase
 
         return Ok(offer);
     }
-
-    [Authorize(Roles = "Seller")]
+    
     [HttpPost]
     public async Task<ActionResult> Create(CreateSellerOfferCommand command, CancellationToken cancellationToken)
     {

@@ -1,4 +1,5 @@
-﻿using ECommerce.Domain.Entities;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,26 +11,23 @@ public static class DatabaseSeeder
     public static async Task SeedAsync(ECommerceDbContext dbContext, UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole<Guid>> roleManager, CancellationToken cancellationToken = default)
     {
-        const string sellerRole = "Seller";
-        const string adminRole = "Admin";
-
-        if (!await roleManager.RoleExistsAsync(sellerRole))
+        if (!await roleManager.RoleExistsAsync(ApplicationRoles.Seller))
         {
-            var result = await roleManager.CreateAsync(new IdentityRole<Guid>(sellerRole));
+            var result = await roleManager.CreateAsync(new IdentityRole<Guid>(ApplicationRoles.Seller));
             if (!result.Succeeded)
             {
                 var errors = string.Join("; ", result.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to seed role '{sellerRole}': {errors}");
+                throw new InvalidOperationException($"Failed to seed role '{ApplicationRoles.Seller}': {errors}");
             }
         }
         
-        if (!await roleManager.RoleExistsAsync(adminRole))
+        if (!await roleManager.RoleExistsAsync(ApplicationRoles.Admin))
         {
-            var result = await roleManager.CreateAsync(new IdentityRole<Guid>(adminRole));
+            var result = await roleManager.CreateAsync(new IdentityRole<Guid>(ApplicationRoles.Admin));
             if (!result.Succeeded)
             {
                 var errors = string.Join("; ", result.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to seed role '{adminRole}': {errors}");
+                throw new InvalidOperationException($"Failed to seed role '{ApplicationRoles.Admin}': {errors}");
             }
         }
         
@@ -62,9 +60,9 @@ public static class DatabaseSeeder
                 throw new InvalidOperationException($"Failed to seed seller user: {errors}");
             }
         }
-        if (!await userManager.IsInRoleAsync(seller, sellerRole))
+        if (!await userManager.IsInRoleAsync(seller, ApplicationRoles.Seller))
         {
-            var roleResult = await userManager.AddToRoleAsync(seller, sellerRole);
+            var roleResult = await userManager.AddToRoleAsync(seller, ApplicationRoles.Seller);
             if (!roleResult.Succeeded)
             {
                 var errors = string.Join("; ", roleResult.Errors.Select(error => error.Description));
@@ -91,9 +89,9 @@ public static class DatabaseSeeder
                 throw new InvalidOperationException($"Failed to seed admin user: {errors}");
             }
         }
-        if (!await userManager.IsInRoleAsync(admin, adminRole))
+        if (!await userManager.IsInRoleAsync(admin, ApplicationRoles.Admin))
         {
-            var roleResult = await userManager.AddToRoleAsync(admin, adminRole);
+            var roleResult = await userManager.AddToRoleAsync(admin, ApplicationRoles.Admin);
             if (!roleResult.Succeeded)
             {
                 var errors = string.Join("; ", roleResult.Errors.Select(error => error.Description));
