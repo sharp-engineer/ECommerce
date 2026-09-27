@@ -7,6 +7,5 @@ public sealed class RejectSellerRequestCommandValidator : AbstractValidator<Reje
     public RejectSellerRequestCommandValidator()
     {
         RuleFor(x => x.SellerRequestId).NotEmpty();
-        RuleFor(x => x.AdminUserId).NotEmpty();
     }
 }

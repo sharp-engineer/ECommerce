@@ -28,7 +28,8 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ECommerceDbContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    await DatabaseSeeder.SeedAsync(dbContext,userManager);
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    await DatabaseSeeder.SeedAsync(dbContext,userManager,roleManager);
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

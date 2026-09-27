@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Abstractions.Persistence;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Abstractions.Persistence;
 using ECommerce.Application.Exceptions;
 using ECommerce.Domain.Enums;
 using MediatR;
@@ -8,7 +9,8 @@ namespace ECommerce.Application.Features.Sellers.SellerRequests.ApproveSellerReq
 public sealed class ApproveSellerRequestCommandHandler(
     ISellerRequestRepository sellerRequestRepository,
     IUserRepository userRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ApproveSellerRequestCommand>
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser) : IRequestHandler<ApproveSellerRequestCommand>
 {
     public async Task Handle(ApproveSellerRequestCommand command, CancellationToken cancellationToken)
     {
@@ -16,7 +18,9 @@ public sealed class ApproveSellerRequestCommandHandler(
         if (request is null)
             throw new NotFoundException($"Seller request with id '{command.SellerRequestId}' was not found.");
 
-        request.Approve(command.AdminUserId);
+        var adminUserId = currentUser.UserId ?? throw new UnauthorizedException("Authenticated user is required.");
+
+        request.Approve(adminUserId);
         await userRepository.SetSellerStatusAsync(request.UserId, SellerStatus.Active, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

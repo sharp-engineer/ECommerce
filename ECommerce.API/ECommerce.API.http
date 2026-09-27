@@ -154,7 +154,7 @@ POST {{ECommerce_API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "seller@test.com",
+  "email": "admin@test.com",
   "password": "Password123!"
 }
 ###

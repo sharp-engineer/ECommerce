@@ -67,6 +67,15 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
                 exception.Message,
                 context.RequestAborted);
         }
+        catch (UnauthorizedException exception)
+        {
+            await WriteProblemDetailsAsync(
+                context,
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized.",
+                exception.Message,
+                context.RequestAborted);
+        }
         catch (Exception exception)
         {
             logger.LogError(exception, "An unhandled exception occurred while processing the request.");

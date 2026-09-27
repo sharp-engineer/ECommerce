@@ -7,6 +7,5 @@ public sealed class ApproveSellerRequestCommandValidator : AbstractValidator<App
     public ApproveSellerRequestCommandValidator()
     {
         RuleFor(x => x.SellerRequestId).NotEmpty();
-        RuleFor(x => x.AdminUserId).NotEmpty();
     }
 }

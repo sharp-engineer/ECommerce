@@ -3,6 +3,7 @@ using ECommerce.Application.Features.Sellers.SellerRequests.CreateSellerRequest;
 using ECommerce.Application.Features.Sellers.SellerRequests.GetSellerRequestById;
 using ECommerce.Application.Features.Sellers.SellerRequests.RejectSellerRequest;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;
@@ -29,19 +30,19 @@ public class SellerRequestsController(ISender sender) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = sellerRequestId }, new { id = sellerRequestId });
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/approve")]
-    public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveSellerRequestDto request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Approve(Guid id, CancellationToken cancellationToken)
     {
-        await sender.Send(new ApproveSellerRequestCommand(id, request.AdminUserId), cancellationToken);
+        await sender.Send(new ApproveSellerRequestCommand(id), cancellationToken);
         return NoContent();
     }
-    
+
+    [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/reject")]
-    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectSellerRequestDto request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Reject(Guid id, CancellationToken cancellationToken)
     {
-        await sender.Send(new RejectSellerRequestCommand(id, request.AdminUserId), cancellationToken);
+        await sender.Send(new RejectSellerRequestCommand(id), cancellationToken);
         return NoContent();
     }
 }

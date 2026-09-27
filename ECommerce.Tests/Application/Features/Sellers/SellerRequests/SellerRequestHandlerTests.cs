@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Abstractions.Persistence;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Abstractions.Persistence;
 using ECommerce.Application.Exceptions;
 using ECommerce.Application.Features.Sellers.SellerRequests.ApproveSellerRequest;
 using ECommerce.Application.Features.Sellers.SellerRequests.CreateSellerRequest;
@@ -171,6 +172,13 @@ public sealed class SellerRequestHandlerTests
         }
     }
 
+    private sealed class FakeCurrentUser : ICurrentUser
+    {
+        public Guid? UserId { get; set; }
+        public bool IsAuthenticated => UserId.HasValue;
+        public bool IsInRole(string role) => true;
+    }
+    
     [Test]
     public async Task GetSellerRequestById_should_return_null_when_request_does_not_exist()
     {
@@ -255,14 +263,19 @@ public sealed class SellerRequestHandlerTests
         };
 
         var unitOfWork = new FakeUnitOfWork();
+        
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = Guid.NewGuid()
+        };
 
         var handler = new ApproveSellerRequestCommandHandler(
             sellerRequestRepository,
             userRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new ApproveSellerRequestCommand(
-            Guid.NewGuid(),
             Guid.NewGuid());
 
         var exception = Assert.ThrowsAsync<NotFoundException>(async () => await handler.Handle(
@@ -306,15 +319,20 @@ public sealed class SellerRequestHandlerTests
         };
 
         var unitOfWork = new FakeUnitOfWork();
+        
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = adminUserId
+        };
 
         var handler = new ApproveSellerRequestCommandHandler(
             sellerRequestRepository,
             userRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new ApproveSellerRequestCommand(
-            sellerRequest.Id,
-            adminUserId);
+            sellerRequest.Id);
 
         await handler.Handle(
             command,
@@ -353,6 +371,67 @@ public sealed class SellerRequestHandlerTests
     }
 
     [Test]
+    public async Task ApproveSellerRequest_should_throw_unauthorized_when_current_user_is_not_authenticated()
+    {
+        var sellerRequest = SellerRequest.Create(
+            Guid.NewGuid(),
+            "I want to become a seller.");
+
+        var sellerRequestRepository = new FakeSellerRequestRepository
+        {
+            Request = sellerRequest
+        };
+
+        var userRepository = new FakeUserRepository
+        {
+            ExistsResult = true
+        };
+
+        var unitOfWork = new FakeUnitOfWork();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = null
+        };
+
+        Assert.That(currentUser.UserId, Is.Null);
+        Assert.That(currentUser.IsAuthenticated, Is.False);
+
+        var handler = new ApproveSellerRequestCommandHandler(
+            sellerRequestRepository,
+            userRepository,
+            unitOfWork,
+            currentUser);
+
+        var command = new ApproveSellerRequestCommand(
+            sellerRequest.Id);
+
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                exception,
+                Is.Not.Null);
+
+            Assert.That(
+                exception!.Message,
+                Does.Contain("Authenticated user"));
+
+            Assert.That(
+                userRepository.SetSellerStatusCalled,
+                Is.False);
+
+            Assert.That(
+                unitOfWork.SaveChangesCalled,
+                Is.False);
+        });
+    }
+
+    [Test]
     public async Task RejectSellerRequest_should_throw_not_found_when_request_does_not_exist()
     {
         var sellerRequestRepository = new FakeSellerRequestRepository();
@@ -363,14 +442,19 @@ public sealed class SellerRequestHandlerTests
         };
 
         var unitOfWork = new FakeUnitOfWork();
+        
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = Guid.NewGuid()
+        };
 
         var handler = new RejectSellerRequestCommandHandler(
             sellerRequestRepository,
             userRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new RejectSellerRequestCommand(
-            Guid.NewGuid(),
             Guid.NewGuid());
 
         var exception = Assert.ThrowsAsync<NotFoundException>(async () => await handler.Handle(
@@ -415,14 +499,19 @@ public sealed class SellerRequestHandlerTests
 
         var unitOfWork = new FakeUnitOfWork();
 
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = adminUserId
+        };
+        
         var handler = new RejectSellerRequestCommandHandler(
             sellerRequestRepository,
             userRepository,
-            unitOfWork);
+            unitOfWork,
+            currentUser);
 
         var command = new RejectSellerRequestCommand(
-            sellerRequest.Id,
-            adminUserId);
+            sellerRequest.Id);
 
         await handler.Handle(
             command,

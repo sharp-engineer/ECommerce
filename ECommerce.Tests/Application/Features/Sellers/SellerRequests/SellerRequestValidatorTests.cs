@@ -66,7 +66,6 @@ public sealed class SellerRequestValidatorTests
         var validator = new ApproveSellerRequestCommandValidator();
 
         var command = new ApproveSellerRequestCommand(
-            Guid.NewGuid(),
             Guid.NewGuid());
 
         var result = validator.Validate(command);
@@ -80,21 +79,6 @@ public sealed class SellerRequestValidatorTests
         var validator = new ApproveSellerRequestCommandValidator();
 
         var command = new ApproveSellerRequestCommand(
-            Guid.Empty,
-            Guid.NewGuid());
-
-        var result = validator.Validate(command);
-
-        Assert.That(result.IsValid, Is.False);
-    }
-
-    [Test]
-    public void ApproveSellerRequest_should_reject_empty_admin_id()
-    {
-        var validator = new ApproveSellerRequestCommandValidator();
-
-        var command = new ApproveSellerRequestCommand(
-            Guid.NewGuid(),
             Guid.Empty);
 
         var result = validator.Validate(command);
@@ -108,7 +92,6 @@ public sealed class SellerRequestValidatorTests
         var validator = new RejectSellerRequestCommandValidator();
 
         var command = new RejectSellerRequestCommand(
-            Guid.NewGuid(),
             Guid.NewGuid());
 
         var result = validator.Validate(command);
@@ -122,21 +105,6 @@ public sealed class SellerRequestValidatorTests
         var validator = new RejectSellerRequestCommandValidator();
 
         var command = new RejectSellerRequestCommand(
-            Guid.Empty,
-            Guid.NewGuid());
-
-        var result = validator.Validate(command);
-
-        Assert.That(result.IsValid, Is.False);
-    }
-
-    [Test]
-    public void RejectSellerRequest_should_reject_empty_admin_id()
-    {
-        var validator = new RejectSellerRequestCommandValidator();
-
-        var command = new RejectSellerRequestCommand(
-            Guid.NewGuid(),
             Guid.Empty);
 
         var result = validator.Validate(command);
