@@ -1,14 +1,18 @@
-﻿using ECommerce.Application.Features.Catalog.ProductVariants.CreateProductVariant;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Features.Catalog.ProductVariants.CreateProductVariant;
 using ECommerce.Application.Features.Catalog.ProductVariants.GetProductVariantById;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;
 
 [ApiController]
 [Route("api/product-variants")]
+[Authorize(Roles = ApplicationRoles.Admin)]
 public class ProductVariantsController(ISender sender) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ProductVariantDto>> GetById(Guid id, CancellationToken cancellationToken)
     {

@@ -1,14 +1,18 @@
-﻿using ECommerce.Application.Features.Catalog.Products.CreateProduct;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Features.Catalog.Products.CreateProduct;
 using ECommerce.Application.Features.Catalog.Products.GetProductById;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;
 
 [ApiController]
 [Route("api/products")]
+[Authorize(Roles = ApplicationRoles.Admin)]
 public class ProductsController(ISender sender) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ProductDetailsDto>> GetById(Guid id, CancellationToken cancellationToken)
     {

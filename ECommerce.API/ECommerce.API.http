@@ -69,6 +69,7 @@ Accept: application/json
 
 POST {{ECommerce_API_HostAddress}}/api/products
 Content-Type: application/json
+Authorization: Bearer {{AdminToken}}
 
 {
   "name": "Samsung S26 Ultra",
@@ -83,6 +84,7 @@ Content-Type: application/json
 
 POST {{ECommerce_API_HostAddress}}/api/products
 Content-Type: application/json
+Authorization: Bearer {{AdminToken}}
 
 {
   "name": "",
@@ -108,6 +110,7 @@ Accept: application/json
 
 POST {{ECommerce_API_HostAddress}}/api/brands
 Content-Type: application/json
+Authorization: Bearer {{AdminToken}}
 
 {
   "name": "Samsung"
@@ -123,6 +126,7 @@ Content-Type: application/json
 
 POST {{ECommerce_API_HostAddress}}/api/categories
 Content-Type: application/json
+Authorization: Bearer {{AdminToken}}
 
 {
   "name": "TV",
@@ -146,6 +150,7 @@ Accept: application/json
 
 POST {{ECommerce_API_HostAddress}}/api/product-variants
 Content-Type: application/json
+Authorization: Bearer {{AdminToken}}
 
 {
   "productId": "{{ProductId}}",
@@ -170,6 +175,7 @@ Accept: application/json
 
 POST {{ECommerce_API_HostAddress}}/api/product-images
 Content-Type: application/json
+Authorization: Bearer {{AdminToken}}
 
 {
   "productId": "{{ProductId}}",
