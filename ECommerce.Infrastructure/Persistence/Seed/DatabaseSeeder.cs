@@ -8,29 +8,49 @@ namespace ECommerce.Infrastructure.Persistence.Seed;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(ECommerceDbContext dbContext, UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole<Guid>> roleManager, CancellationToken cancellationToken = default)
+    public static async Task SeedRolesAsync(
+        RoleManager<IdentityRole<Guid>> roleManager)
     {
-        if (!await roleManager.RoleExistsAsync(ApplicationRoles.Seller))
+        await EnsureRoleAsync(roleManager, ApplicationRoles.Admin);
+        await EnsureRoleAsync(roleManager, ApplicationRoles.Seller);
+    }
+
+    public static async Task SeedDevelopmentDataAsync(
+        ECommerceDbContext dbContext,
+        UserManager<ApplicationUser> userManager,
+        CancellationToken cancellationToken = default)
+    {
+        await SeedCatalogDataAsync(dbContext, cancellationToken);
+        await SeedUsersAsync(userManager);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task EnsureRoleAsync(
+        RoleManager<IdentityRole<Guid>> roleManager,
+        string role)
+    {
+        if (await roleManager.RoleExistsAsync(role))
+            return;
+
+        var result = await roleManager.CreateAsync(
+            new IdentityRole<Guid>(role));
+
+        if (!result.Succeeded)
         {
-            var result = await roleManager.CreateAsync(new IdentityRole<Guid>(ApplicationRoles.Seller));
-            if (!result.Succeeded)
-            {
-                var errors = string.Join("; ", result.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to seed role '{ApplicationRoles.Seller}': {errors}");
-            }
+            var errors = string.Join(
+                "; ",
+                result.Errors.Select(error => error.Description));
+
+            throw new InvalidOperationException(
+                $"Failed to seed role '{role}': {errors}");
         }
-        
-        if (!await roleManager.RoleExistsAsync(ApplicationRoles.Admin))
-        {
-            var result = await roleManager.CreateAsync(new IdentityRole<Guid>(ApplicationRoles.Admin));
-            if (!result.Succeeded)
-            {
-                var errors = string.Join("; ", result.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to seed role '{ApplicationRoles.Admin}': {errors}");
-            }
-        }
-        
+    }
+
+    private static async Task SeedCatalogDataAsync(
+        ECommerceDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
         if (!await dbContext.Brands.AnyAsync(cancellationToken))
         {
             dbContext.Brands.Add(Brand.Create("Apple"));
@@ -40,65 +60,90 @@ public static class DatabaseSeeder
         {
             dbContext.Categories.Add(Category.Create("Mobile Phones"));
         }
+    }
 
-        var seller = await userManager.FindByEmailAsync("seller@test.com");
-        if (seller is null)
-        {
-            seller = new ApplicationUser
-            {
-                UserName = "seller@test.com",
-                Email = "seller@test.com",
-                EmailConfirmed = true,
-                FirstName = "Test",
-                LastName = "Seller"
-            };
+    private static async Task SeedUsersAsync(
+        UserManager<ApplicationUser> userManager)
+    {
+        var seller = await EnsureUserAsync(
+            userManager,
+            email: "seller@test.com",
+            password: "Password123!",
+            firstName: "Test",
+            lastName: "Seller");
 
-            var sellerResult = await userManager.CreateAsync(seller, "Password123!");
-            if (!sellerResult.Succeeded)
-            {
-                var errors = string.Join("; ", sellerResult.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to seed seller user: {errors}");
-            }
-        }
-        if (!await userManager.IsInRoleAsync(seller, ApplicationRoles.Seller))
+        await EnsureRoleAsync(
+            userManager,
+            seller,
+            ApplicationRoles.Seller);
+
+        var admin = await EnsureUserAsync(
+            userManager,
+            email: "admin@test.com",
+            password: "Password123!",
+            firstName: "Test",
+            lastName: "Admin");
+
+        await EnsureRoleAsync(
+            userManager,
+            admin,
+            ApplicationRoles.Admin);
+    }
+
+    private static async Task<ApplicationUser> EnsureUserAsync(
+        UserManager<ApplicationUser> userManager,
+        string email,
+        string password,
+        string firstName,
+        string lastName)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user is not null)
+            return user;
+
+        user = new ApplicationUser
         {
-            var roleResult = await userManager.AddToRoleAsync(seller, ApplicationRoles.Seller);
-            if (!roleResult.Succeeded)
-            {
-                var errors = string.Join("; ", roleResult.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to assign seller role: {errors}");
-            }
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            FirstName = firstName,
+            LastName = lastName
+        };
+
+        var result = await userManager.CreateAsync(user, password);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(
+                "; ",
+                result.Errors.Select(error => error.Description));
+
+            throw new InvalidOperationException(
+                $"Failed to seed user '{email}': {errors}");
         }
 
-        var admin = await userManager.FindByEmailAsync("admin@test.com");
-        if (admin is null)
-        {
-            admin = new ApplicationUser
-            {
-                UserName = "admin@test.com",
-                Email = "admin@test.com",
-                EmailConfirmed = true,
-                FirstName = "Test",
-                LastName = "Admin"
-            };
-            
-            var adminResult = await userManager.CreateAsync(admin, "Password123!");
-            if (!adminResult.Succeeded)
-            {
-                var errors = string.Join("; ", adminResult.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to seed admin user: {errors}");
-            }
-        }
-        if (!await userManager.IsInRoleAsync(admin, ApplicationRoles.Admin))
-        {
-            var roleResult = await userManager.AddToRoleAsync(admin, ApplicationRoles.Admin);
-            if (!roleResult.Succeeded)
-            {
-                var errors = string.Join("; ", roleResult.Errors.Select(error => error.Description));
-                throw new InvalidOperationException($"Failed to assign admin role: {errors}");
-            }
-        }
+        return user;
+    }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+    private static async Task EnsureRoleAsync(
+        UserManager<ApplicationUser> userManager,
+        ApplicationUser user,
+        string role)
+    {
+        if (await userManager.IsInRoleAsync(user, role))
+            return;
+
+        var result = await userManager.AddToRoleAsync(user, role);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(
+                "; ",
+                result.Errors.Select(error => error.Description));
+
+            throw new InvalidOperationException(
+                $"Failed to assign role '{role}' to user '{user.Id}': {errors}");
+        }
     }
 }

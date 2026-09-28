@@ -36,7 +36,7 @@ POST {{ECommerce_API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "[seller@test.com](mailto:seller@test.com)",
+  "email": "seller@test.com",
   "password": "Password123!"
 }
 
@@ -48,15 +48,11 @@ POST {{ECommerce_API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "[admin@test.com](mailto:admin@test.com)",
-  "password": "Admin123!"
+  "email": "admin@test.com",
+  "password": "Password123!"
 }
 
-# -------------------------------------------------------------------
-
-# Products
-
-# -------------------------------------------------------------------
+###
 
 ### Get Product
 
