@@ -1,4 +1,5 @@
 ﻿using ECommerce.Application.Abstractions.Persistence;
+using ECommerce.Application.Exceptions;
 using ECommerce.Application.Features.Catalog.Brands.GetBrandById;
 using ECommerce.Application.Features.Catalog.Categories.GetCategoryById;
 using ECommerce.Application.Features.Catalog.ProductImages.GetProductImageById;
@@ -10,12 +11,13 @@ using MediatR;
 namespace ECommerce.Application.Features.Catalog.Products.GetProductById;
 
 public sealed class GetProductByIdQueryHandler(IProductRepository productRepository)
-    : IRequestHandler<GetProductByIdQuery, ProductDetailsDto?>
+    : IRequestHandler<GetProductByIdQuery, ProductDetailsDto>
 {
-    public async Task<ProductDetailsDto?> Handle(GetProductByIdQuery query, CancellationToken cancellationToken)
+    public async Task<ProductDetailsDto> Handle(GetProductByIdQuery query, CancellationToken cancellationToken)
     {
         var product = await productRepository.GetByIdWithDetailsAsync(query.ProductId, cancellationToken);
-        if (product is null) return null;
+        if (product is null)
+            throw new NotFoundException($"Product with id '{query.ProductId}' was not found.");
 
         return new ProductDetailsDto(product.Id, product.Name, product.Description, product.Status,
             new BrandDto(product.Brand!.Id, product.Brand.Name),

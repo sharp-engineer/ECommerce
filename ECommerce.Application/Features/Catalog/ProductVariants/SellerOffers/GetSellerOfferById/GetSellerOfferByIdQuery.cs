@@ -2,4 +2,4 @@
 
 namespace ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.GetSellerOfferById;
 
-public sealed record GetSellerOfferByIdQuery(Guid Id) : IRequest<SellerOfferDto?>;
+public sealed record GetSellerOfferByIdQuery(Guid Id) : IRequest<SellerOfferDto>;

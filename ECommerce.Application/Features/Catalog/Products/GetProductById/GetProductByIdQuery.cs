@@ -2,4 +2,4 @@
 
 namespace ECommerce.Application.Features.Catalog.Products.GetProductById;
 
-public sealed record GetProductByIdQuery(Guid ProductId) : IRequest<ProductDetailsDto?>;
+public sealed record GetProductByIdQuery(Guid ProductId) : IRequest<ProductDetailsDto>;

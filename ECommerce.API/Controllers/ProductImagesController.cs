@@ -13,9 +13,6 @@ public class ProductImagesController(ISender sender) : ControllerBase
     public async Task<ActionResult<ProductImageDto>> GetProductImage(Guid id, CancellationToken cancellationToken)
     {
         var image = await sender.Send(new GetProductImageByIdQuery(id), cancellationToken);
-        if (image is null)
-            return NotFound();
-
         return Ok(image);
     }
 
@@ -23,7 +20,6 @@ public class ProductImagesController(ISender sender) : ControllerBase
     public async Task<ActionResult> Create(CreateProductImageCommand command, CancellationToken cancellationToken)
     {
         var imageId = await sender.Send(command, cancellationToken);
-
         return CreatedAtAction(nameof(GetProductImage), new { Id = imageId }, new { Id = imageId });
     }
 }

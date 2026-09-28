@@ -21,9 +21,6 @@ public class SellerOffersController(ISender sender) : ControllerBase
     public async Task<ActionResult<SellerOfferDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var offer = await sender.Send(new GetSellerOfferByIdQuery(id), cancellationToken);
-        if (offer is null)
-            return NotFound();
-
         return Ok(offer);
     }
 
@@ -31,7 +28,6 @@ public class SellerOffersController(ISender sender) : ControllerBase
     public async Task<ActionResult> Create(CreateSellerOfferCommand command, CancellationToken cancellationToken)
     {
         var offerId = await sender.Send(command, cancellationToken);
-
         return CreatedAtAction(nameof(GetById), new { id = offerId }, new { id = offerId });
     }
 

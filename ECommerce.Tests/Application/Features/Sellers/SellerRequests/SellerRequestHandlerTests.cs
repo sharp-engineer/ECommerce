@@ -188,22 +188,30 @@ public sealed class SellerRequestHandlerTests
     }
     
     [Test]
-    public async Task GetSellerRequestById_should_return_null_when_request_does_not_exist()
+    public async Task GetSellerRequestById_should_throw_not_found_when_request_does_not_exist()
     {
         var sellerRequestRepository = new FakeSellerRequestRepository();
-        var currentUser = new FakeCurrentUser();
+
+        var currentUser = new FakeCurrentUser
+        {
+            UserId = Guid.NewGuid()
+        };
 
         var handler = new GetSellerRequestByIdQueryHandler(
             sellerRequestRepository,
             currentUser);
 
-        var query = new GetSellerRequestByIdQuery(Guid.NewGuid());
+        var query = new GetSellerRequestByIdQuery(
+            Guid.NewGuid());
 
-        var result = await handler.Handle(
-            query,
-            CancellationToken.None);
+        var exception = Assert.ThrowsAsync<NotFoundException>(
+            async () => await handler.Handle(
+                query,
+                CancellationToken.None));
 
-        Assert.That(result, Is.Null);
+        Assert.That(
+            exception!.Message,
+            Does.Contain("Seller request"));
     }
 
     [Test]

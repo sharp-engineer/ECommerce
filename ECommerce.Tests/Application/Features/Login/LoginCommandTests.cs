@@ -1,7 +1,8 @@
 ﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Exceptions;
 using ECommerce.Application.Features.Authentication.Login;
 
-namespace ECommerce.Tests.Application.Features.Authentication.Login;
+namespace ECommerce.Tests.Application.Features.Login;
 
 public sealed class LoginCommandTests
 {
@@ -64,7 +65,7 @@ public sealed class LoginCommandTests
     }
 
     [Test]
-    public async Task Login_should_return_null_when_credentials_are_invalid()
+    public async Task Login_should_throw_unauthorized_when_credentials_are_invalid()
     {
         var identityService = new FakeIdentityService
         {
@@ -81,22 +82,18 @@ public sealed class LoginCommandTests
             "seller@test.com",
             "wrong-password");
 
-        var result = await handler.Handle(
-            command,
-            CancellationToken.None);
+        var exception = Assert.ThrowsAsync<UnauthorizedException>(
+            async () => await handler.Handle(
+                command,
+                CancellationToken.None));
 
-        Assert.That(result, Is.Null);
+        Assert.That(
+            exception!.Message,
+            Does.Contain("username or password"));
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(
-                identityService.AuthenticateCalled,
-                Is.True);
-
-            Assert.That(
-                accessTokenService.GenerateCalled,
-                Is.False);
-        });
+        Assert.That(
+            accessTokenService.GenerateCalled,
+            Is.False);
     }
 
     [Test]

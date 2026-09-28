@@ -1,16 +1,17 @@
 ﻿using ECommerce.Application.Abstractions.Persistence;
+using ECommerce.Application.Exceptions;
 using MediatR;
 
 namespace ECommerce.Application.Features.Catalog.ProductVariants.SellerOffers.GetSellerOfferById;
 
 public sealed class GetSellerOfferByIdQueryHandler(ISellerOfferRepository sellerOfferRepository)
-    : IRequestHandler<GetSellerOfferByIdQuery, SellerOfferDto?>
+    : IRequestHandler<GetSellerOfferByIdQuery, SellerOfferDto>
 {
-    public async Task<SellerOfferDto?> Handle(GetSellerOfferByIdQuery query, CancellationToken cancellationToken)
+    public async Task<SellerOfferDto> Handle(GetSellerOfferByIdQuery query, CancellationToken cancellationToken)
     {
         var offer = await sellerOfferRepository.GetByIdAsync(query.Id, cancellationToken);
         if (offer is null)
-            return null;
+            throw new NotFoundException($"Seller offer with id '{query.Id}' was not found.");
 
         return new SellerOfferDto(
             offer.Id,

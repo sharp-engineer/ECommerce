@@ -14,12 +14,6 @@ public class AuthController(ISender sender) :ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken cancellationToken)
     {
         var result = await sender.Send(command, cancellationToken);
-        if (result is null)
-            return Unauthorized(new
-            {
-                message = "Invalid email or password."
-            });
-        
         return Ok(result);
     }
 }

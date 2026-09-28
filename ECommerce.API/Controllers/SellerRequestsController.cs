@@ -17,11 +17,8 @@ public class SellerRequestsController(ISender sender) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SellerRequestDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var sellerRequestId = await sender.Send(new GetSellerRequestByIdQuery(id), cancellationToken);
-        if (sellerRequestId is null)
-            return NotFound();
-
-        return Ok(sellerRequestId);
+        var sellerRequest = await sender.Send(new GetSellerRequestByIdQuery(id), cancellationToken);
+        return Ok(sellerRequest);
     }
 
     [Authorize]
@@ -29,7 +26,6 @@ public class SellerRequestsController(ISender sender) : ControllerBase
     public async Task<ActionResult> Create(CreateSellerRequestCommand command, CancellationToken cancellationToken)
     {
         var sellerRequestId = await sender.Send(command, cancellationToken);
-
         return CreatedAtAction(nameof(GetById), new { id = sellerRequestId }, new { id = sellerRequestId });
     }
 

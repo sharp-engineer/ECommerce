@@ -13,9 +13,6 @@ public class ProductsController(ISender sender) : ControllerBase
     public async Task<ActionResult<ProductDetailsDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new GetProductByIdQuery(id), cancellationToken);
-        if (result is null)
-            return NotFound();
-
         return Ok(result);
     }
 
@@ -23,7 +20,6 @@ public class ProductsController(ISender sender) : ControllerBase
     public async Task<ActionResult> Create(CreateProductCommand command, CancellationToken cancellationToken)
     {
         var productId = await sender.Send(command, cancellationToken);
-        
         return CreatedAtAction(nameof(GetById), new { id = productId }, new { id = productId });
     }
 }

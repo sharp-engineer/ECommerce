@@ -261,20 +261,24 @@ public sealed class SellerOfferHandlerTests
     }
     
     [Test]
-    public async Task GetSellerOfferById_should_return_null_when_offer_does_not_exist()
+    public async Task GetSellerOfferById_should_throw_not_found_when_offer_does_not_exist()
     {
         var sellerOfferRepository = new FakeSellerOfferRepository();
-    
+
         var handler = new GetSellerOfferByIdQueryHandler(
             sellerOfferRepository);
 
-        var query = new GetSellerOfferByIdQuery(Guid.NewGuid());
+        var query = new GetSellerOfferByIdQuery(
+            Guid.NewGuid());
 
-        var result = await handler.Handle(
-            query,
-            CancellationToken.None);
+        var exception = Assert.ThrowsAsync<NotFoundException>(
+            async () => await handler.Handle(
+                query,
+                CancellationToken.None));
 
-        Assert.That(result, Is.Null);
+        Assert.That(
+            exception!.Message,
+            Does.Contain("Seller offer"));
     }
 
     [Test]

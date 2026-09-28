@@ -13,9 +13,6 @@ public class CategoriesController(ISender sender) : ControllerBase
     public async Task<ActionResult<CategoryDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var category = await sender.Send(new GetCategoryByIdQuery(id), cancellationToken);
-        if (category is null)
-            return NotFound();
-
         return Ok(category);
     }
 
@@ -23,7 +20,6 @@ public class CategoriesController(ISender sender) : ControllerBase
     public async Task<ActionResult> Create(CreateCategoryCommand command, CancellationToken cancellationToken)
     {
         var categoryId = await sender.Send(command, cancellationToken);
-
         return CreatedAtAction(nameof(GetById), new { id = categoryId }, new { id = categoryId });
     }
 }
