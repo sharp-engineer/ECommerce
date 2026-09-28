@@ -187,6 +187,25 @@ public sealed class SellerRequestHandlerTests
             Roles.Contains(role);
     }
     
+    private sealed class FakeUserRoleService : IUserRoleService
+    {
+        public bool AddToRoleCalled { get; private set; }
+        public Guid? LastUserId { get; private set; }
+        public string? LastRole { get; private set; }
+
+        public Task AddToRoleAsync(
+            Guid userId,
+            string role,
+            CancellationToken cancellationToken = default)
+        {
+            AddToRoleCalled = true;
+            LastUserId = userId;
+            LastRole = role;
+
+            return Task.CompletedTask;
+        }
+    }
+    
     [Test]
     public async Task GetSellerRequestById_should_throw_not_found_when_request_does_not_exist()
     {
@@ -430,9 +449,12 @@ public sealed class SellerRequestHandlerTests
             UserId = Guid.NewGuid()
         };
 
+        var userRoleService = new FakeUserRoleService();
+
         var handler = new ApproveSellerRequestCommandHandler(
             sellerRequestRepository,
             userRepository,
+            userRoleService,
             unitOfWork,
             currentUser);
 
@@ -486,9 +508,12 @@ public sealed class SellerRequestHandlerTests
             UserId = adminUserId
         };
 
+        var userRoleService = new FakeUserRoleService();
+
         var handler = new ApproveSellerRequestCommandHandler(
             sellerRequestRepository,
             userRepository,
+            userRoleService,
             unitOfWork,
             currentUser);
 
@@ -501,6 +526,18 @@ public sealed class SellerRequestHandlerTests
 
         Assert.Multiple(() =>
         {
+            Assert.That(
+                userRoleService.AddToRoleCalled,
+                Is.True);
+
+            Assert.That(
+                userRoleService.LastUserId,
+                Is.EqualTo(userId));
+
+            Assert.That(
+                userRoleService.LastRole,
+                Is.EqualTo(ApplicationRoles.Seller));
+            
             Assert.That(
                 sellerRequest.Status,
                 Is.EqualTo(SellerRequestStatus.Approved));
@@ -558,9 +595,12 @@ public sealed class SellerRequestHandlerTests
         Assert.That(currentUser.UserId, Is.Null);
         Assert.That(currentUser.IsAuthenticated, Is.False);
 
+        var userRoleService = new FakeUserRoleService();
+
         var handler = new ApproveSellerRequestCommandHandler(
             sellerRequestRepository,
             userRepository,
+            userRoleService,
             unitOfWork,
             currentUser);
 
