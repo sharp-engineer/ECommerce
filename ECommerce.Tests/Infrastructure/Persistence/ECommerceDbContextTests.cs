@@ -1,20 +1,16 @@
-﻿using ECommerce.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+﻿using ECommerce.Tests.Infrastructure.Fixtures;
 
 namespace ECommerce.Tests.Infrastructure.Persistence;
 
-public sealed class ECommerceDbContextTests
+public sealed class ECommerceDbContextTests : PostgresTestBase
 {
     [Test]
     public async Task Can_connect_to_database()
     {
-        var connectionString = Environment.GetEnvironmentVariable("ECOMMERCE_TEST_CONNECTION_STRING");
-        Assert.That(connectionString, Is.Not.Null.And.Not.Empty);
+        await using var dbContext = CreateDbContext();
 
-        var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseNpgsql(connectionString).Options;
-        await using var dbContext = new ECommerceDbContext(options);
-        
         var canConnect = await dbContext.Database.CanConnectAsync();
+
         Assert.That(canConnect, Is.True);
     }
 }

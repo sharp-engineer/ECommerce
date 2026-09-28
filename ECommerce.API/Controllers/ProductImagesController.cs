@@ -1,14 +1,18 @@
-﻿using ECommerce.Application.Features.Catalog.ProductImages.CreateProductImage;
+﻿using ECommerce.Application.Abstractions.Identity;
+using ECommerce.Application.Features.Catalog.ProductImages.CreateProductImage;
 using ECommerce.Application.Features.Catalog.ProductImages.GetProductImageById;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;
 
 [ApiController]
 [Route("api/product-images")]
+[Authorize(Roles = ApplicationRoles.Admin)]
 public class ProductImagesController(ISender sender) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ProductImageDto>> GetProductImage(Guid id, CancellationToken cancellationToken)
     {
