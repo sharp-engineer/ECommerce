@@ -1,5 +1,6 @@
 ﻿using ECommerce.Domain.Common;
 using ECommerce.Domain.Enums;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -14,10 +15,10 @@ public class Payment : AuditableEntity
     private Payment(Guid orderId, decimal amount, PaymentMethod paymentMethod)
     {
         if (orderId == Guid.Empty)
-            throw new ArgumentException("Order ID is required.");
+            throw new DomainException("Order ID is required.");
 
         if (amount <= 0)
-            throw new ArgumentException("Payment amount must be greater than zero.");
+            throw new DomainException("Payment amount must be greater than zero.");
 
         OrderId = orderId;
         Amount = amount;
@@ -46,10 +47,10 @@ public class Payment : AuditableEntity
     public void MarkSuccessful(string transactionId, string? gatewayReference = null)
     {
         if (Status != PaymentStatus.Pending)
-            throw new InvalidOperationException("Only pending payment can be marked as successful.");
+            throw new DomainException("Only pending payment can be marked as successful.");
 
         if (string.IsNullOrWhiteSpace(transactionId))
-            throw new ArgumentException("Transaction ID is required.");
+            throw new DomainException("Transaction ID is required.");
 
         Status = PaymentStatus.Successful;
         TransactionId = transactionId;
@@ -60,7 +61,7 @@ public class Payment : AuditableEntity
     public void MockFailed()
     {
         if (Status != PaymentStatus.Pending)
-            throw new InvalidOperationException("Only pending payment can be marked as failed.");
+            throw new DomainException("Only pending payment can be marked as failed.");
 
         Status = PaymentStatus.Failed;
         FailedAt = DateTime.UtcNow;
@@ -69,7 +70,7 @@ public class Payment : AuditableEntity
     public void Cancel()
     {
         if (Status != PaymentStatus.Pending)
-            throw new InvalidOperationException("Only pending payments can be cancelled.");
+            throw new DomainException("Only pending payments can be cancelled.");
 
         Status = PaymentStatus.Cancelled;
     }

@@ -12,6 +12,7 @@ public class SellerOfferConfiguration : IEntityTypeConfiguration<SellerOffer>
         builder.Property(x => x.Price).HasPrecision(18, 2).IsRequired();
         builder.Property(x => x.Stock).IsRequired();
         builder.Property(x => x.Status).IsRequired();
+        builder.Property(x => x.RowVersion).IsRowVersion();
 
         builder.HasOne(x => x.ProductVariant)
             .WithMany(x => x.SellerOffers)

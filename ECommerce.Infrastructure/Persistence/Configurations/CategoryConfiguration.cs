@@ -10,8 +10,10 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.HasKey(c => c.Id);
         builder.Property(x => x.Name).IsRequired().HasMaxLength(150);
-        builder.HasIndex(x => x.Name).IsUnique();
-        
+        builder.HasIndex(x => new { x.ParentCategoryId, x.Name })
+            .HasDatabaseName("IX_Categories_ParentCategoryId_Name")
+            .IsUnique().AreNullsDistinct(false);
+
         builder.HasOne(x => x.ParentCategory)
             .WithMany(x => x.Children)
             .HasForeignKey(x => x.ParentCategoryId)

@@ -1,4 +1,5 @@
 ﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -14,31 +15,31 @@ public class OrderItem : Entity
         string variantName, string sellerName, decimal unitPrice, int quantity, decimal discountAmount)
     {
         if (productId == Guid.Empty)
-            throw new ArgumentException("Product ID is required.");
+            throw new DomainException("Product ID is required.");
 
         if (productVariantId == Guid.Empty)
-            throw new ArgumentException("Product variant ID is required.");
+            throw new DomainException("Product variant ID is required.");
 
         if (sellerOfferId == Guid.Empty)
-            throw new ArgumentException("Seller offer ID is required.");
+            throw new DomainException("Seller offer ID is required.");
 
         if (string.IsNullOrWhiteSpace(productName))
-            throw new ArgumentException("Product name is required.");
+            throw new DomainException("Product name is required.");
 
         if (string.IsNullOrWhiteSpace(variantName))
-            throw new ArgumentException("Variant name is required.");
+            throw new DomainException("Variant name is required.");
 
         if (string.IsNullOrWhiteSpace(sellerName))
-            throw new ArgumentException("Seller name is required.");
+            throw new DomainException("Seller name is required.");
 
         if (unitPrice < 0)
-            throw new ArgumentException("Unit price cannot be negative.");
+            throw new DomainException("Unit price cannot be negative.");
 
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero.");
+            throw new DomainException("Quantity must be greater than zero.");
 
         if (discountAmount < 0)
-            throw new ArgumentException("Discount amount cannot be negative.");
+            throw new DomainException("Discount amount cannot be negative.");
 
         ProductId = productId;
         ProductVariantId = productVariantId;
@@ -54,7 +55,7 @@ public class OrderItem : Entity
 
         var subtotal = unitPrice * quantity;
         if(discountAmount > subtotal)
-            throw new ArgumentException("Discount amount cannot exceed subtotal.");
+            throw new DomainException("Discount amount cannot exceed subtotal.");
 
         TotalAmount = subtotal - discountAmount;
     }

@@ -7,4 +7,5 @@ public sealed record SellerOfferDto(
     Guid SellerId,
     decimal Price,
     int Stock,
-    SellerOfferStatus Status);
+    SellerOfferStatus Status,
+    uint RowVersion);

@@ -177,10 +177,11 @@ namespace ECommerce.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.HasIndex("ParentCategoryId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Categories_ParentCategoryId_Name");
 
-                    b.HasIndex("ParentCategoryId");
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("ParentCategoryId", "Name"), false);
 
                     b.ToTable("Categories");
                 });
@@ -434,6 +435,9 @@ namespace ECommerce.Infrastructure.Persistence.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsPrimary")
                         .HasColumnType("boolean");
 
@@ -445,6 +449,9 @@ namespace ECommerce.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Url")
                         .IsRequired()
@@ -470,7 +477,6 @@ namespace ECommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
@@ -513,6 +519,12 @@ namespace ECommerce.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("ProductVariantId")
                         .HasColumnType("uuid");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");

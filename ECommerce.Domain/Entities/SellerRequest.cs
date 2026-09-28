@@ -1,5 +1,6 @@
 ﻿using ECommerce.Domain.Common;
 using ECommerce.Domain.Enums;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -14,7 +15,7 @@ public class SellerRequest : Entity
     public SellerRequest(Guid userId, string? reason)
     {
         if (userId == Guid.Empty)
-            throw new ArgumentException("User ID is required.");
+            throw new DomainException("User ID is required.");
 
         UserId = userId;
         Reason = reason;
@@ -39,10 +40,10 @@ public class SellerRequest : Entity
     public void Approve(Guid adminUserId)
     {
         if (adminUserId == Guid.Empty)
-            throw new ArgumentException("Admin user ID is required.");
+            throw new DomainException("Admin user ID is required.");
 
         if (Status != SellerRequestStatus.Pending)
-            throw new InvalidOperationException("Only pending request can be approved.");
+            throw new DomainException("Only pending request can be approved.");
 
         Status = SellerRequestStatus.Approved;
         ReviewedByUserId = adminUserId;
@@ -52,10 +53,10 @@ public class SellerRequest : Entity
     public void Reject(Guid adminUserId)
     {
         if (adminUserId == Guid.Empty)
-            throw new ArgumentException("Admin user ID is required.");
+            throw new DomainException("Admin user ID is required.");
 
         if (Status != SellerRequestStatus.Pending)
-            throw new InvalidOperationException("Only pending request can be approved.");
+            throw new DomainException("Only pending request can be rejected.");
 
         Status = SellerRequestStatus.Rejected;
         ReviewedByUserId = adminUserId;

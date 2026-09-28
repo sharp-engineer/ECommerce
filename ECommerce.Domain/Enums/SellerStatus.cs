@@ -1,4 +1,4 @@
-﻿namespace ECommerce.Infrastructure.Identity;
+﻿namespace ECommerce.Domain.Enums;
 
 public enum SellerStatus
 {

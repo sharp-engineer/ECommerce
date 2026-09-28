@@ -1,4 +1,5 @@
 ﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -13,7 +14,7 @@ public class Cart : AuditableEntity
     public Cart(Guid userId)
     {
         if (userId == Guid.Empty)
-            throw new ArgumentException("User ID is required.");
+            throw new DomainException("User ID is required.");
 
         UserId = userId;
     }
@@ -35,10 +36,10 @@ public class Cart : AuditableEntity
     public void AddItem(Guid sellerOfferId, int quantity)
     {
         if (sellerOfferId == Guid.Empty)
-            throw new ArgumentException("Seller offer ID is required.");
+            throw new DomainException("Seller offer ID is required.");
 
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero.");
+            throw new DomainException("Quantity must be greater than zero.");
 
         var existingItem = _items.FirstOrDefault(x => x.SellerOfferId == sellerOfferId);
         if (existingItem is not null)
@@ -54,7 +55,7 @@ public class Cart : AuditableEntity
     {
         var item = _items.FirstOrDefault(x => x.SellerOfferId == sellerOfferId);
         if (item is null)
-            throw new ArgumentException("Cart item was not found.");
+            throw new DomainException("Cart item was not found.");
 
         item.SetQuantity(quantity);
     }

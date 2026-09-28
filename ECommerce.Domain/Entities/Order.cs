@@ -1,5 +1,6 @@
 ﻿using ECommerce.Domain.Common;
 using ECommerce.Domain.Enums;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -14,7 +15,7 @@ public class Order : AuditableEntity
     private Order(Guid userId)
     {
         if (userId == Guid.Empty)
-            throw new ArgumentException("User ID is required.");
+            throw new DomainException("User ID is required.");
 
         UserId = userId;
         Status = OrderStatus.Pending;
@@ -43,22 +44,22 @@ public class Order : AuditableEntity
         string postalCode, string addressLine)
     {
         if (string.IsNullOrWhiteSpace(recipientName))
-            throw new ArgumentException("Recipient name is required.");
+            throw new DomainException("Recipient name is required.");
 
         if (string.IsNullOrWhiteSpace(phoneNumber))
-            throw new ArgumentException("Phone number is required.");
+            throw new DomainException("Phone number is required.");
 
         if (string.IsNullOrWhiteSpace(province))
-            throw new ArgumentException("Province is required.");
+            throw new DomainException("Province is required.");
 
         if (string.IsNullOrWhiteSpace(city))
-            throw new ArgumentException("City is required.");
+            throw new DomainException("City is required.");
 
         if (string.IsNullOrWhiteSpace(postalCode))
-            throw new ArgumentException("Postal code is required.");
+            throw new DomainException("Postal code is required.");
 
         if (string.IsNullOrWhiteSpace(addressLine))
-            throw new ArgumentException("Address is required.");
+            throw new DomainException("Address is required.");
 
         var order = new Order(userId);
 
@@ -91,7 +92,7 @@ public class Order : AuditableEntity
     public void MoveToAwaitingPayment()
     {
         if (Status != OrderStatus.Pending)
-            throw new InvalidOperationException("Order cannot move to awaiting payment.");
+            throw new DomainException("Order cannot move to awaiting payment.");
 
         Status = OrderStatus.AwaitingPayment;
     }
@@ -99,7 +100,7 @@ public class Order : AuditableEntity
     public void Confirm()
     {
         if (Status != OrderStatus.AwaitingPayment)
-            throw new InvalidOperationException("Only orders awaiting payment can be confirmed.");
+            throw new DomainException("Only orders awaiting payment can be confirmed.");
 
         Status = OrderStatus.Confirmed;
     }
@@ -107,7 +108,7 @@ public class Order : AuditableEntity
     public void Cancel()
     {
         if (Status != OrderStatus.Pending && Status != OrderStatus.AwaitingPayment)
-            throw new InvalidOperationException("Order cannot be cancelled in its current state.");
+            throw new DomainException("Order cannot be cancelled in its current state.");
 
         Status = OrderStatus.Cancelled;
     }

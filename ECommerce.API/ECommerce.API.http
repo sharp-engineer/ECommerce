@@ -1,19 +1,86 @@
 @ECommerce_API_HostAddress = https://localhost:7102
 
-GET {{ECommerce_API_HostAddress}}/api/products/4b67459d-e12a-4c5b-b244-437d89756661
+# -------------------------------------------------------------------
+
+# Local test variables
+
+# -------------------------------------------------------------------
+
+@SellerToken = YOUR_SELLER_ACCESS_TOKEN
+@AdminToken = YOUR_ADMIN_ACCESS_TOKEN
+
+@ProductId = YOUR_PRODUCT_ID
+@BrandId = YOUR_BRAND_ID
+@CategoryId = YOUR_CATEGORY_ID
+@ParentCategoryId = YOUR_PARENT_CATEGORY_ID
+
+@ProductVariantId = YOUR_PRODUCT_VARIANT_ID
+@ProductImageId = YOUR_PRODUCT_IMAGE_ID
+
+@SellerOfferId = YOUR_SELLER_OFFER_ID
+@SellerRequestId = YOUR_SELLER_REQUEST_ID
+
+# Get the current RowVersion from GET /api/seller-offers/{id}
+
+@SellerOfferRowVersion = YOUR_CURRENT_ROW_VERSION
+
+# -------------------------------------------------------------------
+
+# Authentication
+
+# -------------------------------------------------------------------
+
+### Login - Seller
+
+POST {{ECommerce_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "[seller@test.com](mailto:seller@test.com)",
+  "password": "Password123!"
+}
+
+###
+
+### Login - Admin
+
+POST {{ECommerce_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "[admin@test.com](mailto:admin@test.com)",
+  "password": "Admin123!"
+}
+
+# -------------------------------------------------------------------
+
+# Products
+
+# -------------------------------------------------------------------
+
+### Get Product
+
+GET {{ECommerce_API_HostAddress}}/api/products/{{ProductId}}
 Accept: application/json
 
 ###
+
+### Create Product
+
 POST {{ECommerce_API_HostAddress}}/api/products
 Content-Type: application/json
 
 {
-  "name": "iPhone 17",
-  "description": "Apple smartphone",
-  "brandId": "40878a7c-2cc3-4efb-921f-572e3310aa22",
-  "categoryId": "822a39ea-a5d2-47bb-bbbc-67f4165177eb"
+  "name": "Samsung S26 Ultra",
+  "description": "Samsung smartphone",
+  "brandId": "{{BrandId}}",
+  "categoryId": "{{CategoryId}}"
 }
+
 ###
+
+### Create Product - Validation Test
+
 POST {{ECommerce_API_HostAddress}}/api/products
 Content-Type: application/json
 
@@ -23,70 +90,224 @@ Content-Type: application/json
   "brandId": "00000000-0000-0000-0000-000000000000",
   "categoryId": "00000000-0000-0000-0000-000000000000"
 }
-###
-GET {{ECommerce_API_HostAddress}}/api/brands/08d66b91-da02-474e-b873-3f9dd1656b20
+
+# -------------------------------------------------------------------
+
+# Brands
+
+# -------------------------------------------------------------------
+
+### Get Brand
+
+GET {{ECommerce_API_HostAddress}}/api/brands/{{BrandId}}
 Accept: application/json
 
 ###
+
+### Create Brand
+
 POST {{ECommerce_API_HostAddress}}/api/brands
 Content-Type: application/json
 
 {
   "name": "Samsung"
 }
-###
+
+# -------------------------------------------------------------------
+
+# Categories
+
+# -------------------------------------------------------------------
+
+### Create Category
+
 POST {{ECommerce_API_HostAddress}}/api/categories
 Content-Type: application/json
 
 {
   "name": "TV",
-  "parentCategoryId": "59fa1994-6a2a-4647-a6c9-c08dc8142fad"
+  "parentCategoryId": "{{ParentCategoryId}}"
 }
-###
-GET {{ECommerce_API_HostAddress}}/api/categories/59fa1994-6a2a-4647-a6c9-c08dc8142fad
-Accept: application/json
 
 ###
+
+### Get Category
+
+GET {{ECommerce_API_HostAddress}}/api/categories/{{CategoryId}}
+Accept: application/json
+
+# -------------------------------------------------------------------
+
+# Product Variants
+
+# -------------------------------------------------------------------
+
+### Create Product Variant
+
 POST {{ECommerce_API_HostAddress}}/api/product-variants
 Content-Type: application/json
 
 {
-  "productId": "4b67459d-e12a-4c5b-b244-437d89756661",
-  "sku": "IPHONE-17-128-BLK",
-  "name": "Black 128GB"
+  "productId": "{{ProductId}}",
+  "sku": "S26-256-BLK",
+  "name": "Black 256GB"
 }
-###
-GET {{ECommerce_API_HostAddress}}/api/product-variants/72e245c7-7e84-42d5-8844-ef766bd3f052
-Accept: application/json
 
 ###
+
+### Get Product Variant
+
+GET {{ECommerce_API_HostAddress}}/api/product-variants/{{ProductVariantId}}
+Accept: application/json
+
+# -------------------------------------------------------------------
+
+# Product Images
+
+# -------------------------------------------------------------------
+
+### Create Product Image
+
 POST {{ECommerce_API_HostAddress}}/api/product-images
 Content-Type: application/json
 
 {
-  "productId": "4b67459d-e12a-4c5b-b244-437d89756661",
-  "productVariantId": "72e245c7-7e84-42d5-8844-ef766bd3f052",
-  "url": "https://example.com/iphone-front.jpg",
-  "altText": "iphone front view",
-  "sortOrder": 2,
-  "isPrimary": false
+  "productId": "{{ProductId}}",
+  "productVariantId": "{{ProductVariantId}}",
+  "url": "https://example.com/product-front.jpg",
+  "altText": "product front view",
+  "sortOrder": 1,
+  "isPrimary": true
 }
+
 ###
-GET {{ECommerce_API_HostAddress}}/api/product-images/535f2f92-e5c6-401b-9ecb-2313cac9ec3d
+
+### Get Product Image
+
+GET {{ECommerce_API_HostAddress}}/api/product-images/{{ProductImageId}}
 Accept: application/json
 
-###
+# -------------------------------------------------------------------
+
+# Seller Offers
+
+# -------------------------------------------------------------------
+
+### Create Seller Offer
+
 POST {{ECommerce_API_HostAddress}}/api/seller-offers
 Content-Type: application/json
+Authorization: Bearer {{SellerToken}}
 
 {
-  "sellerId": "01a0cd45-d428-765d-8999-93e38daf4bd1",
-  "productVariantId": "72e245c7-7e84-42d5-8844-ef766bd3f052",
+  "productVariantId": "{{ProductVariantId}}",
   "price": 50000000,
   "stock": 10
 }
+
 ###
-GET {{ECommerce_API_HostAddress}}/api/seller-offers/9c0db6d2-fd7c-4039-9032-692fac6de236
+
+### Get Seller Offer
+
+GET {{ECommerce_API_HostAddress}}/api/seller-offers/{{SellerOfferId}}
 Accept: application/json
 
 ###
+
+### Update Seller Offer Price
+
+PUT {{ECommerce_API_HostAddress}}/api/seller-offers/price
+Content-Type: application/json
+Authorization: Bearer {{SellerToken}}
+
+{
+  "sellerOfferId": "{{SellerOfferId}}",
+  "price": 160000,
+  "rowVersion": {{SellerOfferRowVersion}}
+}
+
+###
+
+### Update Seller Offer Stock
+
+PUT {{ECommerce_API_HostAddress}}/api/seller-offers/stock
+Content-Type: application/json
+Authorization: Bearer {{SellerToken}}
+
+{
+  "sellerOfferId": "{{SellerOfferId}}",
+  "stock": 20,
+  "rowVersion": {{SellerOfferRowVersion}}
+}
+
+###
+
+### Activate Seller Offer
+
+PUT {{ECommerce_API_HostAddress}}/api/seller-offers/activate
+Content-Type: application/json
+Authorization: Bearer {{SellerToken}}
+
+{
+  "sellerOfferId": "{{SellerOfferId}}",
+  "rowVersion": {{SellerOfferRowVersion}}
+}
+
+###
+
+### Deactivate Seller Offer
+
+PUT {{ECommerce_API_HostAddress}}/api/seller-offers/deactivate
+Content-Type: application/json
+Authorization: Bearer {{SellerToken}}
+
+{
+  "sellerOfferId": "{{SellerOfferId}}",
+  "rowVersion": {{SellerOfferRowVersion}}
+}
+
+# -------------------------------------------------------------------
+
+# Seller Requests
+
+# -------------------------------------------------------------------
+
+### Create Seller Request
+
+POST {{ECommerce_API_HostAddress}}/api/seller-requests
+Content-Type: application/json
+Authorization: Bearer {{SellerToken}}
+
+{
+  "reason": "I want to sell TVs and mobile phones."
+}
+
+###
+
+### Get Seller Request - Owner
+
+GET {{ECommerce_API_HostAddress}}/api/seller-requests/{{SellerRequestId}}
+Accept: application/json
+Authorization: Bearer {{SellerToken}}
+
+###
+
+### Get Seller Request - Admin
+
+GET {{ECommerce_API_HostAddress}}/api/seller-requests/{{SellerRequestId}}
+Accept: application/json
+Authorization: Bearer {{AdminToken}}
+
+###
+
+### Approve Seller Request - Admin
+
+POST {{ECommerce_API_HostAddress}}/api/seller-requests/{{SellerRequestId}}/approve
+Authorization: Bearer {{AdminToken}}
+
+###
+
+### Reject Seller Request - Admin
+
+POST {{ECommerce_API_HostAddress}}/api/seller-requests/{{SellerRequestId}}/reject
+Authorization: Bearer {{AdminToken}}

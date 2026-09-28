@@ -1,4 +1,5 @@
 ﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -13,10 +14,10 @@ public class CartItem : Entity
     internal CartItem(Guid sellerOfferId, int quantity)
     {
         if (sellerOfferId == Guid.Empty)
-            throw new ArgumentException("Seller offer ID is required.");
+            throw new DomainException("Seller offer ID is required.");
 
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero.");
+            throw new DomainException("Quantity must be greater than zero.");
 
         SellerOfferId = sellerOfferId;
         Quantity = quantity;
@@ -33,7 +34,7 @@ public class CartItem : Entity
     internal void IncreaseQuantity(int quantity)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero.");
+            throw new DomainException("Quantity must be greater than zero.");
 
         Quantity += quantity;
     }
@@ -41,7 +42,7 @@ public class CartItem : Entity
     internal void SetQuantity(int quantity)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero.");
+            throw new DomainException("Quantity must be greater than zero.");
 
         Quantity = quantity;
     }

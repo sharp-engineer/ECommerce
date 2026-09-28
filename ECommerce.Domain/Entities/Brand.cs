@@ -1,4 +1,5 @@
 ﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -13,7 +14,7 @@ public class Brand : AuditableEntity
     private Brand(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new AggregateException("Brand name is required.");
+            throw new DomainException("Brand name is required.");
         
         Name = name;
     }

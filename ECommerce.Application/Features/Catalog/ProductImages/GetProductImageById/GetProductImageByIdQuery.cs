@@ -2,4 +2,4 @@
 
 namespace ECommerce.Application.Features.Catalog.ProductImages.GetProductImageById;
 
-public sealed record GetProductImageByIdQuery(Guid Id) : IRequest<ProductImageDto?>;
+public sealed record GetProductImageByIdQuery(Guid Id) : IRequest<ProductImageDto>;

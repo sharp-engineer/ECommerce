@@ -1,5 +1,6 @@
 ﻿using ECommerce.Domain.Common;
 using ECommerce.Domain.Enums;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Domain.Entities;
 
@@ -14,7 +15,7 @@ public class OrderGroup : AuditableEntity
     internal OrderGroup(Guid sellerId)
     {
         if (sellerId == Guid.Empty)
-            throw new ArgumentException("Seller ID is required.");
+            throw new DomainException("Seller ID is required.");
 
         SellerId = sellerId;
         Status = OrderGroupStatus.Pending;

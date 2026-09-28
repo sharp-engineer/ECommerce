@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using ECommerce.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 
 namespace ECommerce.Infrastructure.Identity;
 

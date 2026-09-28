@@ -16,4 +16,15 @@ internal sealed class SellerOfferRepository(ECommerceDbContext dbContext) : ISel
         return await dbContext.SellerOffers.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == sellerOfferId, cancellationToken);
     }
+
+    public async Task<SellerOffer?> GetByIdForUpdateAsync(Guid sellerOfferId, uint expectedRowVersion,
+        CancellationToken cancellationToken = default)
+    {
+        var sellerOffer =
+            await dbContext.SellerOffers.FirstOrDefaultAsync(x => x.Id == sellerOfferId, cancellationToken);
+        if (sellerOffer is null) return null;
+
+        dbContext.Entry(sellerOffer).Property(x => x.RowVersion).OriginalValue = expectedRowVersion;
+        return sellerOffer;
+    }
 }
